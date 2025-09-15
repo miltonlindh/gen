@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String       @id @default(cuid())
+  email          String       @unique
+  trialExpiresAt DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  quotes         Quote[]
+  trialCodes     TrialCode[]  @relation("UserTrialCodes")
+  customers      Customer[]
+}
+
+model TrialCode {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  used      Boolean  @default(false)
+  usedAt    DateTime?
+  usedById  String?
+  usedBy    User?    @relation("UserTrialCodes", fields: [usedById], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  email     String?
+  phone     String?
+  orgNumber String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  quotes    Quote[]
+}
+
+model Quote {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id])
+
+  validUntil DateTime?
+  subtotal   Int
+  vat        Int
+  total      Int
+  currency   String    @default("SEK")
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  items      QuoteItem[]
+}
+
+model QuoteItem {
+  id        String  @id @default(cuid())
+  quoteId   String
+  quote     Quote   @relation(fields: [quoteId], references: [id])
+
+  title     String
+  quantity  Int      @default(1)
+  unitPrice Int
+  lineTotal Int
+}
+
+model Suppression {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  reason    String?
+  createdAt DateTime @default(now())
+}
